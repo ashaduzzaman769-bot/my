@@ -1,0 +1,456 @@
+<?php
+// পিএইচপি সেশন চালু করা হলো যাতে লগইন ডাটা ট্র্যাক করা যায়
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// লগইন এবং লগআউট হ্যান্ডলিং
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
+    if ($_POST['action'] == 'login') {
+        $_SESSION['user_name'] = htmlspecialchars($_POST['u-name']);
+        $_SESSION['user_phone'] = htmlspecialchars($_POST['u-phone']);
+    } elseif ($_POST['action'] == 'logout') {
+        session_unset();
+        session_destroy();
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Shop - Multi Language & Location</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #1b5e20; --bg: #f5f6f8; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg) !important; margin: 0; padding: 0; }
+        .hidden { display: none !important; }
+        .header { background: var(--primary); color: white; padding: 15px; border-bottom-left-radius: 15px; border-bottom-right-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 18px; animation: blinkText 2.5s infinite ease-in-out; }
+        @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.1; } 100% { opacity: 1; } }
+        .lang-switch { display: flex; background: #b0bec5; border-radius: 20px; overflow: hidden; border: 2px solid #fff; cursor: pointer; }
+        .lang-btn { padding: 6px 14px; font-size: 13px; font-weight: bold; color: #fff; border: none; background: transparent; transition: 0.3s; }
+        .lang-btn.active { background: #e53935; }
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        .card { background: linear-gradient(135deg, #e8f5e9, #e3f2fd) !important; padding: 25px 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #d0e2ff; }
+        .welcome-text { text-align: center; }
+        .welcome-text h2 { color: var(--primary); margin: 0; font-size: 24px; font-weight: bold; line-height: 1.4; animation: blinkText 3s infinite ease-in-out; }
+        .welcome-text p { font-size: 14px; color: #444; line-height: 1.6; margin-top: 10px; margin-bottom: 0; animation: blinkText 3s infinite ease-in-out; }
+        .text-label { text-align: center; font-weight: bold; background: linear-gradient(135deg, #e8f5e9, #e3f2fd); padding: 10px; border-radius: 12px; border: 1px solid #d0e2ff; margin-bottom: 10px; }
+        .search-container { margin-bottom: 15px; position: relative; }
+        .search-input { width: 100%; padding: 12px 40px 12px 15px; border: 2px solid #b2dfdb; border-radius: 12px; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(27,94,32,0.15); }
+        .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #888; font-size: 16px; }
+        .search-results-box { background: white; border-radius: 12px; max-height: 250px; overflow-y: auto; margin-bottom: 15px; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .menu-btn { background: white; border-radius: 12px; text-align: center; cursor: pointer; padding: 12px 5px; border: 1px solid #ddd; }
+        .menu-btn:active { background: #f1f8e9; transform: scale(0.95); }
+        .icon { font-size: 28px; display: block; margin-bottom: 5px; }
+        .label { font-size: 11px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; box-sizing: border-box; font-size: 14px; }
+        .row { display: flex; gap: 8px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 15px; }
+        .btn-primary { background: var(--primary); color: white; margin-top: 10px; }
+        .btn-back { background: #f0f0f0; margin-bottom: 15px; font-size: 13px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .stat-box { background: white; padding: 10px 5px; border-radius: 12px; text-align: center; border-bottom: 4px solid var(--primary); font-size: 12px; }
+        .stat-box b { color: var(--primary); font-size: 15px; display: block; margin-top: 5px; }
+        .order-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; border-left: 6px solid #ff9800; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .order-card.done { border-left-color: #4caf50; }
+        .order-info { font-size: 13px; line-height: 1.6; color: #333; }
+        .order-info b { color: var(--primary); }
+        .list-item { background: white; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--primary); }
+        .btn-del { background: #d32f2f; color: white; padding: 8px 15px; border-radius: 5px; border: none; font-size: 12px; cursor: pointer; }
+        .btn-ok { background: #4caf50; color: white; padding: 8px 15px; border-radius: 5px; border: none; font-size: 12px; cursor: pointer; margin-right: 5px; }
+        .location-section { background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #ddd; margin: 10px 0; }
+        .location-section label { font-size: 12px; font-weight: bold; color: #555; display: block; margin-top: 5px; text-align: left; }
+        .btn-gps { background: #007bff; color: white; padding: 8px; font-size: 12px; border-radius: 8px; border: none; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 8px; }
+        .social-section { text-align: center; margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 15px; border: 1px solid #e9ecef; }
+        .social-title { font-size: 15px; font-weight: bold; color: #333; margin-bottom: 12px; }
+        .social-icons { display: flex; justify-content: center; gap: 15px; }
+        .social-icon { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: white; font-size: 20px; text-decoration: none; transition: 0.3s; }
+        .social-icon:hover { transform: scale(1.1); }
+        .fb { background-color: #3b5998; } .yt { background-color: #ff0000; } .in { background-color: #0077b5; } .ig { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 data-lang="app_title">My Shop [ আমার শপ ]</h1>
+        <div class="lang-switch">
+            <button id="lang-bn-btn" class="lang-btn active" onclick="switchLanguage('bn')">বাংলা</button>
+            <button id="lang-en-btn" class="lang-btn" onclick="switchLanguage('en')">English</button>
+        </div>
+    </div>
+
+    <div id="scr-login" class="container <?php echo isset($_SESSION['user_name']) ? 'hidden' : ''; ?>">
+        <div class="card welcome-text">
+            <h2 data-lang="welcome_head">আমার শপ<br>আপনাকে স্বাগত।</h2>
+            <p data-lang="welcome_sub1">আপনার প্রয়োজনে আমরা আছি সব সময়।</p>
+            <p data-lang="welcome_sub2">তাই আর চিন্তা নয়, আমরা আপনাকে দিচ্ছি একজায়গায় সব শুধু আপনার অপেক্ষা।</p>
+        </div>
+        <div class="text-label" style="color: #555;" data-lang="reg_first">প্রথমে আগে নিবন্ধন করুন</div>
+        <div class="card">
+            <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
+                <input type="hidden" name="action" value="login">
+                <input type="text" name="u-name" id="u-name" placeholder="আপনার নাম  Your name" required>
+                <input type="tel" name="u-phone" id="u-phone" placeholder="মোবাইল নম্বর Phone Number" maxlength="11" required>
+                <button type="submit" class="btn btn-primary" data-lang="btn_enter">প্রবেশ করুন Enter</button>
+            </form>
+            <p onclick="toAdmin()" style="text-align:center; color:#ccc; font-size:12px; margin-top:40px; cursor:pointer; text-decoration: underline;" data-lang="admin_panel">🔐 অ্যাডমিন প্যানেল</p>
+        </div>
+    </div>
+
+    <div id="scr-cust" class="container <?php echo isset($_SESSION['user_name']) ? '' : 'hidden'; ?>">
+        <div class="card welcome-text">
+            <h2 id="u-msg">স্বাগতম, <?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : ''; ?>!</h2>
+            <p data-lang="cust_subtitle">স্যার আপনার যা প্রয়োজন নিচে ক্যাটাগরি অনুযায়ী ক্লিক করেন</p>
+            <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" style="display:inline;">
+                <input type="hidden" name="action" value="logout">
+                <p id="u-logout-btn" onclick="this.closest('form').submit();" style="color:red; font-size:12px; margin-top:10px; cursor:pointer; text-decoration:underline; font-weight:bold;" data-lang="logout">লগআউট (Logout)</p>
+            </form>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="main-search" class="search-input" placeholder="পণ্য খুঁজুন... Search products..." oninput="liveSearchProducts()">
+            <span class="search-icon">🔍</span>
+        </div>
+        <div id="search-results" class="search-results-box hidden"></div>
+        
+        <div id="cust-main" class="grid">
+            <div class="menu-btn" onclick="showCustAgri()"><span class="icon">🌱</span><span class="label" data-lang="cat_1">১. কৃষি পণ্য</span></div>
+            <div class="menu-btn" onclick="openOrder('কাঁচা বাজার','bazar')"><span class="icon">🥕</span><span class="label" data-lang="cat_2">২. কাঁচা বাজার</span></div>
+            <div class="menu-btn" onclick="openOrder('মুদি দোকান','grocer')"><span class="icon">🛒</span><span class="label" data-lang="cat_3">৩. মুদি দোকান</span></div>
+            <div class="menu-btn" onclick="openOrder('কনফেকশনারি','cake')"><span class="icon">🍰</span><span class="label" data-lang="cat_4">৪. কনফেকশনারি</span></div>
+            <div class="menu-btn" onclick="openOrder('রেস্টুরেন্ট','rest')"><span class="icon">🍔</span><span class="label" data-lang="cat_5">৫. রেস্টুরেন্ট</span></div>
+            <div class="menu-btn" onclick="openOrder('ফলমূল','fruit')"><span class="icon">🍎</span><span class="label" data-lang="cat_6">৬. ফলমূল</span></div>
+            <div class="menu-btn" onclick="openOrder('কসমেটিকস','cosm')"><span class="icon">💄</span><span class="label" data-lang="cat_7">৭. কসমেটিকস</span></div>
+            <div class="menu-btn" onclick="openOrder('ফার্নিচার','furni')"><span class="icon">🛋️</span><span class="label" data-lang="cat_8">৮. ফার্নিচার</span></div>
+            <div class="menu-btn" onclick="openOrder('বাস টিকেট','ticket')"><span class="icon">🎫</span><span class="label" data-lang="cat_9">৯. বাস টিকেট</span></div>
+            <div class="menu-btn" onclick="openOrder('ডাক্তার সিরিয়াল','doc')"><span class="icon">👨‍⚕️</span><span class="label" data-lang="cat_10">১০. ডাক্তার</span></div>
+            <div class="menu-btn" onclick="openOrder('ইলেক্ট্রনিক্স','elec')"><span class="icon">💻</span><span class="label" data-lang="cat_11">১১. ইলেক্ট্রনিক্স</span></div>
+            <div class="menu-btn" onclick="openOrder('হোটেল এম্বুল্যান্স','hotel')"><span class="icon">🚑</span><span class="label" data-lang="cat_12">১২. হোটেল</span></div>
+        </div>
+
+        <div id="cust-action-box" style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn" style="background:#007bff; color:white; flex: 1;" onclick="showCustOrders()" data-lang="btn_my_orders">📦 আমার অর্ডার সমূহ</button>
+            <button class="btn" style="background:#25D366; color:white; flex: 1;" onclick="goToWhatsApp()" data-lang="btn_whatsapp">💬 সরাসরি হোয়াটসঅ্যাপ করুন</button>
+        </div>
+
+        <div id="cust-social-bar" class="social-section">
+            <div class="social-title" data-lang="social_title">আমাদের সোশ্যাল মিডিয়া প্রোফাইল দেখুন</div>
+            <div class="social-icons">
+                <a href="https://facebook.com" target="_blank" class="social-icon fb"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://youtube.com" target="_blank" class="social-icon yt"><i class="fab fa-youtube"></i></a>
+                <a href="https://linkedin.com" target="_blank" class="social-icon in"><i class="fab fa-linkedin-in"></i></a>
+                <a href="https://instagram.com" target="_blank" class="social-icon ig"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+
+        <div id="cust-orders-view" class="hidden" style="margin-top: 15px;">
+            <button class="btn btn-back" onclick="backToMainFromOrders()" data-lang="btn_back_main">← মেইন মেনুতে ফিরে যান</button>
+            <div class="card"><h3 style="margin:0; text-align:center; color: var(--primary);" data-lang="order_list_title">আপনার অর্ডার সমূহের তালিকা</h3></div>
+            <div id="cust-order-list"></div>
+        </div>
+
+        <div id="cust-agri" class="hidden">
+            <button class="btn btn-back" onclick="backToMain()" data-lang="btn_back_main">← মেইন মেনুতে ফিরে যান</button>
+            <div class="grid">
+                <div class="menu-btn" onclick="openOrder('ধান বীজ','agri_dhan')"><span class="icon">🌾</span><span class="label" data-lang="sub_1">ধান বীজ</span></div>
+                <div class="menu-btn" onclick="openOrder('সবজি বীজ','agri_veg')"><span class="icon">🥦</span><span class="label" data-lang="sub_2">সবজি বীজ</span></div>
+                <div class="menu-btn" onclick="openOrder('ভূট্টা বীজ','agri_corn')"><span class="icon">🌽</span><span class="label" data-lang="sub_3">ভূট্টা বীজ</span></div>
+                <div class="menu-btn" onclick="openOrder('সার','agri_sar')"><span class="icon">🧪</span><span class="label" data-lang="sub_4">সার</span></div>
+                <div class="menu-btn" onclick="openOrder('ফাটিলাইজার','agri_fert')"><span class="icon">⚗️</span><span class="label" data-lang="sub_5">ফাটিলাইজার</span></div>
+                <div class="menu-btn" onclick="openOrder('আগাছানাশক','agri_weed')"><span class="icon">🌿</span><span class="label" data-lang="sub_6">আগাছানাশক</span></div>
+                <div class="menu-btn" onclick="openOrder('কীটনাশক','agri_pest')"><span class="icon">🦟</span><span class="label" data-lang="sub_7">কীটনাশক</span></div>
+                <div class="menu-btn" onclick="openOrder('ছত্রাকনাশক','agri_fungi')"><span class="icon">🍄</span><span class="label" data-lang="sub_8">ছত্রাকনাশক</span></div>
+            </div>
+        </div>
+
+        <div id="order-box" class="hidden">
+            <button class="btn btn-back" onclick="backToMain()" data-lang="btn_back">← পিছনে আসেন</button>
+            <div class="card"><h3 id="otitle" style="margin:0; text-align:center;">অर्डर ফরম</h3></div>
+            <select id="sel-prod" onchange="showProdDetail()"></select>
+            
+            <div id="detail-box" class="hidden">
+                <p id="p-bene" style="background:#fff; padding:10px; border-radius:10px; border:1px solid #eee; font-size:13px;"></p>
+                <div class="row">
+                    <button class="btn" id="s1" onclick="selP(1)">প্যাক ১</button>
+                    <button class="btn" id="s2" onclick="selP(2)">প্যাক ২</button>
+                    <button class="btn" id="s3" onclick="selP(3)">প্যাক ৩</button>
+                </div>
+                <input type="number" id="o-qty" value="1" min="1" oninput="calcP()">
+                <select id="o-pay">
+                    <option value="Cash on Delivery">ক্যাশ অন ডেলিভারি / Cash on Delivery</option>
+                    <option value="Bkash">বিকাশ / Bkash</option>
+                    <option value="Nagad">নগদ / Nagad</option>
+                    <option value="Rocket">রকেট / Rocket</option>
+                </select>
+                <h2 style="text-align:center; color:red; margin:10px 0;"><span data-lang="total_pay">মোট:</span> ৳<span id="o-total">0</span></h2>
+                
+                <div class="location-section">
+                    <button type="button" class="btn-gps" onclick="getLocationGPS()" data-lang="btn_gps">📍 ম্যাপে আমার কারেন্ট লোকেশন দিন</button>
+                    <label data-lang="lbl_division">বিভাগ সিলেক্ট করুন:</label>
+                    <select id="loc-division" onchange="updateDistricts()">
+                        <option value="">-- বিভাগ বেছে নিন --</option>
+                        <option value="Dhaka">ঢাকা / Dhaka</option>
+                        <option value="Mymensingh">ময়মনসিংহ / Mymensingh</option>
+                        <option value="Chittagong">চট্টগ্রাম / Chittagong</option>
+                    </select>
+                    <label data-lang="lbl_district">জেলা সিলেক্ট করুন:</label>
+                    <select id="loc-district" onchange="updateThanas()">
+                        <option value="">-- আগে বিভাগ সিলেক্ট করুন --</option>
+                    </select>
+                    <label data-lang="lbl_thana">থানা/উপজেলা সিলেক্ট করুন:</label>
+                    <select id="loc-thana" onchange="buildFullAddress()">
+                        <option value="">-- আগে জেলা সিলেক্ট করুন --</option>
+                    </select>
+                </div>
+
+                <textarea id="o-addr" placeholder="আপনার পুর্ণ ঠিকানা ও বিকল্প মোবাইল নম্বর দিন"></textarea>
+                <textarea id="o-note" placeholder="অতিরিক্ত মন্তব্য (ঐচ্ছিক)"></textarea>
+                
+                <form id="fps-form" action="https://formspree.io/f/mqenrwdj" method="POST" target="_blank" style="display:none;">
+                    <input type="hidden" name="Customer_Name" id="fps-name" value="<?php echo isset($_SESSION['user_name']) ? $_SESSION['user_name'] : ''; ?>">
+                    <input type="hidden" name="Customer_Phone" id="fps-phone" value="<?php echo isset($_SESSION['user_phone']) ? $_SESSION['user_phone'] : ''; ?>">
+                    <input type="hidden" name="Product" id="fps-prod">
+                    <input type="hidden" name="Total_Price" id="fps-price">
+                    <input type="hidden" name="Address" id="fps-addr">
+                    <input type="hidden" name="Payment" id="fps-pay">
+                    <input type="hidden" name="Note" id="fps-note">
+                </form>
+
+                <button class="btn btn-primary" id="submit-btn" onclick="submitOrd()" data-lang="btn_confirm_order">অর্ডার নিশ্চিত করুন</button>
+                <div style="height: 40px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-admin" class="container hidden">
+        <div class="stat-grid">
+            <div class="stat-box"><span data-lang="stat_total">মোট অর্ডার</span><b>৳<span id="st-all">0</span></b></div>
+            <div class="stat-box"><span data-lang="stat_delivery">ডেলিভারি</span><b>৳<span id="st-ok">0</span></b></div>
+            <div class="stat-box"><span data-lang="stat_pending">পেন্ডিং</span><b>৳<span id="st-pending">0</span></b></div>
+        </div>
+        <div id="adm-menu">
+            <button class="btn btn-primary" onclick="showA('adm-add')" data-lang="adm_add_prod">পণ্য যোগ করুন</button>
+            <button class="btn" style="background:orange; color:white; margin-top:10px;" onclick="showA('adm-del')" data-lang="adm_del_prod">পণ্য ডিলিট করুন</button>
+            <button class="btn" style="background:#333; color:white; margin-top:10px;" onclick="showA('adm-list')" data-lang="adm_order_list">অর্ডার লিস্ট</button>
+            <button class="btn btn-back" onclick="location.reload()" style="margin-top:20px;" data-lang="logout">লগআউট</button>
+        </div>
+
+        <div id="adm-add" class="hidden">
+            <button class="btn btn-back" onclick="showA('adm-menu')">← পিছনে আসেন</button>
+            <label>প্রধান ক্যাটাগরি:</label>
+            <select id="am-cat" onchange="checkAgSub()">
+                <option value="agri_main">১. কৃষি পণ্য</option>
+                <option value="bazar">২. কাঁচা বাজার</option>
+                <option value="grocer">৩. মুদি দোকান</option>
+            </select>
+            <div id="agri-sub-wrap">
+                <label>কৃষি সাব-ক্যাটাগরি:</label>
+                <select id="as-cat">
+                    <option value="agri_dhan">১. ধান বীজ</option>
+                    <option value="agri_veg">২. সবজি বীজ</option>
+                </select>
+            </div>
+            <input type="text" id="pname" placeholder="পণ্যের নাম">
+            <div class="row"><input type="text" id="ps1" placeholder="প্যাক ১"><input type="number" id="pp1" placeholder="দাম ১"></div>
+            <div class="row"><input type="text" id="ps2" placeholder="প্যাক ২"><input type="number" id="pp2" placeholder="দাম ২"></div>
+            <div class="row"><input type="text" id="ps3" placeholder="প্যাক ৩"><input type="number" id="pp3" placeholder="দাম ৩"></div>
+            <textarea id="pbene" placeholder="উপকারিতা/বৈশিষ্ট্য লিখুন"></textarea>
+            <button class="btn btn-primary" onclick="saveToDB()">সেভ করুন</button>
+        </div>
+
+        <div id="adm-del" class="hidden">
+            <button class="btn btn-back" onclick="showA('adm-menu')">← পিছনে আসেন</button>
+            <select id="del-sel-cat" onchange="renderDel()">
+                <option value="">ক্যাটাগরি সিলেক্ট করুন</option>
+                <option value="bazar">কাঁচা বাজার</option>
+                <option value="grocer">মুদি দোকান</option>
+            </select>
+            <div id="del-list-box"></div>
+        </div>
+
+        <div id="adm-list" class="hidden">
+            <button class="btn btn-back" onclick="showA('adm-menu')">← পিছনে আসেন</button>
+            <div id="order-list-box"></div>
+        </div>
+    </div>
+
+    <script>
+        const langData = {
+            bn: {
+                app_title: "My Shop [ আমার শপ ]", welcome_head: "আমার শপ<br>আপনাকে স্বাগত।", welcome_sub1: "আপনার প্রয়োজনে আমরা আছি সব সময়।", welcome_sub2: "তাই আর চিন্তা নয়, আমরা আপনাকে দিচ্ছি একজায়গায় সব শুধু আপনার অপেক্ষা।", reg_first: "প্রথমে আগে নিবন্ধন করুন", btn_enter: "প্রবেশ করুন Enter", admin_panel: "🔐 অ্যাডমিন প্যানেল", cust_subtitle: "স্যার আপনার যা প্রয়োজন নিচে ক্যাটাগরি অনুযায়ী ক্লিক করেন", logout: "লগআউট (Logout)", cat_1: "১. কৃষি পণ্য", cat_2: "২. কাঁচা বাজার", cat_3: "৩. মুদি দোকান", cat_4: "৪. কনফেকশনারি", cat_5: "৫. রেস্টুরেন্ট", cat_6: "৬. ফলমূল", cat_7: "৭. কসমেটিকস", cat_8: "৮. ফার্নিচার", cat_9: "৯. বাস টিকেট", cat_10: "১০. ডাক্তার", cat_11: "১১. ইলেক্ট্রনিক্স", cat_12: "১২. হোটেল", btn_my_orders: "📦 আমার অর্ডার সমূহ", btn_whatsapp: "💬 সরাসরি হোয়াটসঅ্যাপ করুন", btn_back_main: "← মেইন মেনুতে ফিরে যান", order_list_title: "আপনার অর্ডার সমূহের তালিকা", sub_1: "ধান বীজ", sub_2: "সবজি বীজ", sub_3: "ভূট্টা বীজ", sub_4: "সার", sub_5: "ফাটিলাইজার", sub_6: "আগাছানাশক", sub_7: "কীটনাশক", sub_8: "ছত্রাকনাশক", btn_back: "← পিছনে আসেন", total_pay: "মোট:", btn_gps: "📍 ম্যাপে আমার কারেন্ট লোকেশন দিন", lbl_division: "বিভাগ সিলেক্ট করুন:", lbl_district: "জেলা সিলেক্ট করুন:", lbl_thana: "থানা/উপজেলা সিলেক্ট করুন:", btn_confirm_order: "অর্ডার নিশ্চিত করুন", stat_total: "মোট অর্ডার", stat_delivery: "ডেলিভারি", stat_pending: "পেন্ডিং", adm_add_prod: "পণ্য যোগ করুন", adm_del_prod: "পণ্য ডিলিট করুন", adm_order_list: "অর্ডার লিস্ট", social_title: "আমাদের সোশ্যাল মিডিয়া প্রোফাইল দেখুন"
+            },
+            en: {
+                app_title: "My Shop", welcome_head: "Welcome to My Shop", welcome_sub1: "We are always available for your needs.", welcome_sub2: "Get everything in one place. We are waiting for you.", reg_first: "Please register first", btn_enter: "Enter App", admin_panel: "🔐 Admin Panel", cust_subtitle: "Sir, please select a category below based on your needs", logout: "Logout", cat_1: "1. Agri Products", cat_2: "2. Kitchen Market", cat_3: "3. Grocery Shop", cat_4: "4. Confectionery", cat_5: "5. Restaurant", cat_6: "6. Fruits Store", cat_7: "7. Cosmetics", cat_8: "8. Furniture", cat_9: "9. Bus Ticket", cat_10: "10. Doctor Serial", cat_11: "11. Electronics", cat_12: "12. Hotel & Ambulance", btn_my_orders: "📦 My Orders", btn_whatsapp: "💬 Direct WhatsApp Chat", btn_back_main: "← Back to Main Menu", order_list_title: "Your Order History List", sub_1: "Paddy Seeds", sub_2: "Vegetable Seeds", sub_3: "Corn Seeds", sub_4: "Fertilizer", sub_5: "Chemical Fertilizer", sub_6: "Weedicide", sub_7: "Pesticide", sub_8: "Fungicide", btn_back: "← Go Back", total_pay: "Total Amount:", btn_gps: "📍 Get My Live Location on Map", lbl_division: "Select Division:", lbl_district: "Select District:", lbl_thana: "Select Thana/Upazila:", btn_confirm_order: "Confirm Order Now", stat_total: "Total Orders", stat_delivery: "Delivered", stat_pending: "Pending", adm_add_prod: "Add New Product", adm_del_prod: "Delete Product", adm_order_list: "View Order List", social_title: "Check Our Social Media Profiles"
+            }
+        };
+
+        let currentLang = localStorage.getItem('myshop_lang') || 'bn';
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('myshop_lang', lang);
+            document.getElementById('lang-bn-btn').classList.toggle('active', lang === 'bn');
+            document.getElementById('lang-en-btn').classList.toggle('active', lang === 'en');
+            document.querySelectorAll('[data-lang]').forEach(el => {
+                let key = el.getAttribute('data-lang');
+                if (langData[lang][key]) el.innerHTML = langData[lang][key];
+            });
+        }
+
+        const locationData = {
+            "Dhaka": { "Dhaka": ["মিরপুর", "উত্তরা"], "Gazipur": ["গাজীপুর সদর"] },
+            "Mymensingh": { "Mymensingh": ["ময়মনসিংহ সদর", "ঝিনাইগাতী"] }
+        };
+
+        let db = JSON.parse(localStorage.getItem('myshop_v12_db')) || {};
+        let orders = JSON.parse(localStorage.getItem('myshop_v12_ord')) || [];
+        let curCat = "", curItem = null, curPrice = 0, selectedPackNum = 1;
+
+        function showCustAgri() {
+            document.getElementById('cust-main').classList.add('hidden');
+            document.getElementById('cust-agri').classList.remove('hidden');
+        }
+
+        function backToMain() {
+            document.getElementById('cust-agri').classList.add('hidden');
+            document.getElementById('order-box').classList.add('hidden');
+            document.getElementById('cust-main').classList.remove('hidden');
+        }
+
+        function toAdmin() {
+            document.getElementById('scr-login').classList.add('hidden');
+            document.getElementById('scr-cust').classList.add('hidden');
+            document.getElementById('scr-admin').classList.remove('hidden');
+        }
+
+        function showA(scr) {
+            ['adm-menu', 'adm-add', 'adm-del', 'adm-list'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById(scr).classList.remove('hidden');
+        }
+
+        function checkAgSub() {
+            let cat = document.getElementById('am-cat').value;
+            document.getElementById('agri-sub-wrap').style.display = (cat === 'agri_main') ? 'block' : 'none';
+        }
+
+        function saveToDB() {
+            let cat = document.getElementById('am-cat').value;
+            if(cat === 'agri_main') cat = document.getElementById('as-cat').value;
+            if(!db[cat]) db[cat] = [];
+            db[cat].push({
+                name: document.getElementById('pname').value,
+                packs: [document.getElementById('ps1').value, document.getElementById('ps2').value, document.getElementById('ps3').value],
+                prices: [Number(document.getElementById('pp1').value), Number(document.getElementById('pp2').value), Number(document.getElementById('pp3').value)],
+                bene: document.getElementById('pbene').value
+            });
+            localStorage.setItem('myshop_v12_db', JSON.stringify(db));
+            alert('পণ্য সেভ হয়েছে!');
+            showA('adm-menu');
+        }
+
+        function openOrder(title, cat) {
+            curCat = cat;
+            document.getElementById('cust-main').classList.add('hidden');
+            document.getElementById('cust-agri').classList.add('hidden');
+            document.getElementById('order-box').classList.remove('hidden');
+            document.getElementById('otitle').innerText = title;
+            
+            let sel = document.getElementById('sel-prod');
+            sel.innerHTML = '<option value="">-- পণ্য সিলেক্ট করুন --</option>';
+            if(db[cat]) {
+                db[cat].forEach((p, idx) => {
+                    sel.innerHTML += `<option value="${idx}">${p.name}</option>`;
+                });
+            }
+        }
+
+        function showProdDetail() {
+            let idx = document.getElementById('sel-prod').value;
+            if(idx === "") { document.getElementById('detail-box').classList.add('hidden'); return; }
+            curItem = db[curCat][idx];
+            document.getElementById('detail-box').classList.remove('hidden');
+            document.getElementById('p-bene').innerText = curItem.bene || 'কোনো বিবরণ নেই';
+            document.getElementById('s1').innerText = curItem.packs[0] || 'প্যাক ১';
+            document.getElementById('s2').innerText = curItem.packs[1] || 'প্যাক ২';
+            document.getElementById('s3').innerText = curItem.packs[2] || 'প্যাক ৩';
+            selP(1);
+        }
+
+        function selP(num) {
+            selectedPackNum = num;
+            curPrice = curItem.prices[num-1] || 0;
+            [1,2,3].forEach(i => document.getElementById('s'+i).style.background = (i===num)?'#1b5e20':'#f0f0f0');
+            [1,2,3].forEach(i => document.getElementById('s'+i).style.color = (i===num)?'white':'black');
+            calcP();
+        }
+
+        function calcP() {
+            let qty = Number(document.getElementById('o-qty').value);
+            document.getElementById('o-total').innerText = curPrice * qty;
+        }
+
+        function updateDistricts() {
+            let div = document.getElementById('loc-division').value;
+            let distSel = document.getElementById('loc-district');
+            distSel.innerHTML = '<option value="">-- জেলা বেছে নিন --</option>';
+            if(locationData[div]) {
+                for(let dist in locationData[div]) {
+                    distSel.innerHTML += `<option value="${dist}">${dist}</option>`;
+                }
+            }
+        }
+
+        function updateThanas() {
+            let div = document.getElementById('loc-division').value;
+            let dist = document.getElementById('loc-district').value;
+            let thanaSel = document.getElementById('loc-thana');
+            thanaSel.innerHTML = '<option value="">-- থানা বেছে নিন --</option>';
+            if(locationData[div] && locationData[div][dist]) {
+                locationData[div][dist].forEach(t => {
+                    thanaSel.innerHTML += `<option value="${t}">${t}</option>`;
+                });
+            }
+        }
+
+        function buildFullAddress() {
+            let div = document.getElementById('loc-division').value;
+            let dist = document.getElementById('loc-district').value;
+            let thana = document.getElementById('loc-thana').value;
+            document.getElementById('o-addr').value = `বিভাগ: ${div}, জেলা: ${dist}, থানা: ${thana}, `;
+        }
+
+        function submitOrd() {
+            let qty = document.getElementById('o-qty').value;
+            let total = document.getElementById('o-total').innerText;
+            let addr = document.getElementById('o-addr').value;
+            let pay = document.getElementById('o-pay').value;
+            let note = document.getElementById('o-note').value;
+
+            document.getElementById('fps-prod').value = `${curItem.name} (${curItem.packs[selectedPackNum-1]}) x ${qty}`;
+            document.getElementById('fps-price').value = total;
+            document.getElementById('fps-addr').value = addr;
+            document.getElementById('fps-pay').value = pay;
+            document.getElementById('fps-note').value = note;
+
+            orders.push({ prod: curItem.name, total: total, status: 'Pending' });
+            localStorage.setItem('myshop_v12_ord', JSON.stringify(orders));
+
+            document.getElementById('fps-form').submit();
+            alert('অর্ডার সাবমিট হয়েছে!');
+            backToMain();
+        }
+
+        window.onload = function() {
+            switchLanguage(currentLang);
+            checkAgSub();
+        };
+    </script>
+</body>
+</html>
